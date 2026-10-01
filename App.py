@@ -201,3 +201,33 @@ m4.metric("LT-101 Signal", f"{round(current_lt101, 1)} %")
 
 time.sleep(1)
 st.rerun()
+import streamlit as st
+from simulation.virtual_plant import VirtualPlant
+from engineering.diagnostic_engine import DiagnosticEngine
+from engineering.prognostics_engine import PrognosticsEngine
+from agents.cmms_agent import CMMSAgent
+
+st.set_page_config(page_title="AI Instrumentation Engine Stage 1+2", layout="wide")
+
+st.title("AI INSTRUMENTATION ENGINE (Stage 1 + Stage 2)")
+st.caption("Intelligent Diagnostics, Predictive RUL Prognostics & Automated CMMS Dispatch")
+
+# Initialize Plant & Engines
+if 'plant' not in st.session_state:
+    st.session_state.plant = VirtualPlant()
+
+plant_data = st.session_state.plant.tick()
+
+# Stage 2 RUL Evaluation
+prog_engine = PrognosticsEngine()
+rul_results = prog_engine.evaluate_rul(plant_data)
+
+st.subheader("Stage 2 Remaining Useful Life (RUL) Forecast")
+col1, col2 = st.columns(2)
+col1.metric("PT-101 RUL", f"{rul_results['pt101_rul_days']} Days", f"Drift: {rul_results['drift_rate']:.2f} bar/day")
+col2.metric("CV-101 RUL", f"{rul_results['cv101_rul_days']} Days", f"Wear Index: {rul_results['wear_index']}%")
+
+if st.button("🚀 DISPATCH AUTOMATED WORK ORDER"):
+    cmms = CMMSAgent()
+    wo = cmms.generate_work_order(rul_results)
+    st.success(f"Dispatched Work Order: {wo['wo_id']} to SAP CMMS")
